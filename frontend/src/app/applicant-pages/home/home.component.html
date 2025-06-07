@@ -1,0 +1,54 @@
+<app-header></app-header>
+
+
+
+<!-- resume-analysis.component.html -->
+<div class="container mt-4">
+    <!-- Welcome header -->
+    <div class="welcome-header mb-4">
+      <h1 class="display-5">Welcome back!</h1>
+      <p class="lead">Let's continue building your career success story.</p>
+    </div>
+  
+    <!-- Navigation tabs -->
+    <ul class="nav nav-tabs mb-4">
+      <li class="nav-item">
+        <a class="nav-link" href="#">Profile</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link active" href="#">Resume</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#">Chat</a>
+      </li>
+    </ul>
+  
+    <!-- Resume Analysis section -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <h2 class="card-title h4">Resume Analysis</h2>
+        <p class="card-text">Upload and analyze your resume with AI</p>
+      </div>
+    </div>
+  
+    <!-- Analyze Your Resume section -->
+    <div class="card">
+      <div class="card-body text-center">
+        <h3 class="card-title h5 mb-3">Analyze Your Resume</h3>
+        <p class="card-text mb-4">Get AI-powered insights and recommendations</p>
+        
+        <div class="dashed-upload-box p-4 mb-3">
+          <i class="bi bi-cloud-upload fs-1 mb-2"></i>
+          <p class="mb-0">Choose PDF file</p>
+          <input type="file" (change)="onFileSelected($event)" accept="application/pdf">
+          <button  (click)="upload()" class="btn btn-primary mt-3">Upload Resume</button>
+        </div>
+      </div>
+    </div>
+
+    <app-resume></app-resume>
+
+
+    <div class="py-5"></div>
+    <div class="py-5"></div>
+  </div>
