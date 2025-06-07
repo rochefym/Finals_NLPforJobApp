@@ -320,7 +320,7 @@ if __name__ == "__main__":
         if output:
             print("Resume parsing successful!")
             for key, value in output.items():
-                print(f"{key}: {value}")
+                print(f"{ky}: {value}")
         else:
             print("Failed to parse resume")
     else:
