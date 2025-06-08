@@ -13,6 +13,8 @@ from api.serializers import ApplicantSerializer, ResumeSerializer, AnalysisSeria
 
 from .Resume_Analysis.resume_analysis import ResumeAnalysis
 
+from .Job_Matching.matching_service import MatchingService
+
 
 class ApplicantList(APIView):
 
@@ -88,3 +90,33 @@ class ResumeAnalysisByApplicant(APIView):
         except Resume.DoesNotExist:
             return Response({"error": "No resumes found for this applicant."}, status=status.HTTP_404_NOT_FOUND)
          
+         
+### maria's code ###
+
+class ApplicantJobMatches(APIView):
+    """
+    Get all jobs matched to an applicant with scores
+    """
+    def get(self, request, applicant_id):
+        matches = ApplicantJob.objects.filter(applicant_id=applicant_id)\
+                     .order_by('-similarity_score')
+        serializer = ApplicantJobSerializer(matches, many=True)
+        return Response(serializer.data)
+
+class JobApplicantMatches(APIView):
+    """
+    Get all applicants matched to a job with scores
+    """
+    def get(self, request, job_id):
+        matches = ApplicantJob.objects.filter(job_id=job_id)\
+                     .order_by('-similarity_score')
+        serializer = ApplicantJobSerializer(matches, many=True)
+        return Response(serializer.data)
+
+class UpdateMatchesForJob(APIView):
+    """
+    Recalculate matches for a single job
+    """
+    def post(self, request, job_id):
+        MatchingService.match_job_to_applicants(job_id)
+        return Response({"status": "success"}, status=200)
