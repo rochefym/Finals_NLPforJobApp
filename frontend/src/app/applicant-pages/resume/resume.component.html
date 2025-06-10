@@ -1,90 +1,98 @@
-<!-- resume-analysis.component.html -->
-<div class="resume-analysis-container">
-  <h1 class="main-title">Resume Analysis</h1>
-  <p class="upload-prompt">Upload your resume to get AI-powered insights and recommendations</p>
+<div class="resume-container">
+  <!-- File Upload Section -->
+  <div class="upload-section">
+    <h2>Upload Resume</h2>
+    <input type="file" (change)="onFileSelected($event)" accept=".pdf" />
+    <button (click)="upload()" [disabled]="!selectedFile || isLoading">
+      {{ isLoading ? 'Analyzing...' : 'Upload & Analyze' }}
+    </button>
+  </div>
 
-  <div class="analysis-section">
-    <h2 class="section-title">Resume Analysis Complete</h2>
-    <p class="file-name">File: android-developer-1558034496.pdf</p>
-    <div class="divider"></div>
+  <!-- Loading Indicator -->
+  <div *ngIf="isLoading" class="loading-indicator">
+    <p>Processing your resume...</p>
+    <div class="spinner"></div>
+  </div>
 
-    <h3 class="subsection-title">Extracted Information</h3>
-    <div class="info-grid">
-      <div class="grid-row">
-        <div class="grid-label">Name</div>
-        <div class="grid-value">John Doe</div>
-        <div class="grid-label">Email</div>
-        <div class="grid-value">john.doegmail.com</div>
-      </div>
-      <div class="grid-row">
-        <div class="grid-label">Phone</div>
-        <div class="grid-value">+1 (555) 123-4567</div>
-        <div class="grid-label">Location</div>
-        <div class="grid-value">San Francisco, CA</div>
-      </div>
-    </div>
-
-    <h3 class="subsection-title">Skills Analysis</h3>
-    <div class="skills-grid">
-      <div class="grid-row">
-        <div class="grid-label">Extracted Skills</div>
-        <div class="skill-value">JavaScript</div>
-        <div class="skill-value">React</div>
-        <div class="skill-value">Python</div>
-        <div class="skill-value">SQL</div>
-        <div class="skill-value">Docker</div>
-        <div class="skill-value">AWS</div>
-      </div>
-      <div class="grid-row">
-        <div class="grid-label">Recommended Skills to Add</div>
-        <div class="skill-value">TypeScript</div>
-        <div class="skill-value">Kubernetes</div>
-        <div class="skill-value">Microservices</div>
-        <div class="skill-value">GraphQL</div>
-        <div class="skill-value">CI/CD</div>
-        <div class="skill-value"></div>
+  <!-- Analysis Results -->
+  <div *ngIf="analysisData" class="analysis-results">
+    <!-- Personal Information -->
+    <div class="info-card">
+      <h3>Personal Information</h3>
+      <div class="info-grid">
+        <div>
+          <strong>Name:</strong> {{ analysisData.name }}
+        </div>
+        <div>
+          <strong>Email:</strong> {{ analysisData.email }}
+        </div>
+        <div>
+          <strong>Phone:</strong> {{ analysisData.mobile_number }}
+        </div>
+        <div>
+          <strong>Experience:</strong> {{ analysisData.years_of_experience }} years ({{ analysisData.experience_level }})
+        </div>
       </div>
     </div>
 
-    <h3 class="subsection-title">Resume Analysis</h3>
-    <div class="metrics-grid">
-      <div class="grid-row">
-        <div class="grid-label">Pages</div>
-        <div class="grid-value">2</div>
-        <div class="grid-label">Experience Level</div>
-        <div class="grid-value">Mid-level (3-5 years)</div>
-      </div>
-      <div class="grid-row">
-        <div class="grid-label">Predicted Field</div>
-        <div class="grid-value">Software Development</div>
-        <div class="grid-label">Recommended Field</div>
-        <div class="grid-value">Full Stack Development</div>
+    <!-- Skills -->
+    <div class="info-card">
+      <h3>Skills</h3>
+      <div class="skills-container">
+        <span *ngFor="let skill of analysisData.skills" class="skill-tag">
+          {{ skill }}
+        </span>
       </div>
     </div>
 
-    <h3 class="subsection-title">Resume Score</h3>
-    <div class="score-display">
-      <span class="score">85</span>
-      <span class="score-max">/100</span>
+    <!-- Education -->
+    <div class="info-card">
+      <h3>Education</h3>
+      <div class="education-section">
+        <h4>Degrees & Certifications:</h4>
+        <ul>
+          <li *ngFor="let degree of analysisData.educational_attainment | slice:0:10">
+            {{ degree }}
+          </li>
+        </ul>
+        
+        <h4>Institutions:</h4>
+        <ul>
+          <li *ngFor="let institution of analysisData.educational_institutions | slice:0:5">
+            {{ institution }}
+          </li>
+        </ul>
+      </div>
     </div>
 
-    <div class="strengths-section">
-      <h3 class="subsection-title">Strengths</h3>
-      <ul class="strengths-list">
-        <li>Clear and well-structured format</li>
-        <li>Relevant technical skills highlighted</li>
-        <li>Strong project descriptions with quantifiable results</li>
-        <li>Professional email and contact information</li>
-      </ul>
+    <!-- Job Predictions -->
+    <div class="info-card">
+      <h3>Job Category Predictions</h3>
+      <div class="predictions-container">
+        <div *ngFor="let prediction of analysisData.predicted_job_categories" class="prediction-item">
+          <span class="prediction-title">{{ prediction[0] }}</span>
+          <span class="prediction-score">{{ (prediction[1] * 100).toFixed(0) }}% match</span>
+        </div>
+      </div>
     </div>
 
-    <div class="improvements-section">
-      <h3 class="subsection-title">Areas to Improve</h3>
-      <ul class="improvements-list">
-        <li>Missing soft skills section</li>
-        <li>Some employment gaps not explained</li>
-        <li>Could benefit from more recent certifications</li>
-      </ul>
+    <!-- Recommended Jobs -->
+    <div class="info-card">
+      <h3>Recommended Jobs</h3>
+      <div class="recommendations-container">
+        <div *ngFor="let job of analysisData.recommended_jobs" class="job-item">
+          <span class="job-title">{{ job[0] }}</span>
+          <span class="job-score">{{ (job[1] * 100).toFixed(0) }}% relevance</span>
+        </div>
+      </div>
     </div>
+  </div>
+
+  <div [innerHTML]="marked_up_result_2"></div>
+
+
+  <!-- Error Message -->
+  <div *ngIf="errorMessage" class="error-message">
+    {{ errorMessage }}
   </div>
 </div>
