@@ -1,0 +1,31 @@
+<h2>Jobs Page</h2>
+<p>This is the jobs page. If you see this, routing and component setup works!</p>
+
+<div class="job-filters">
+    <input [(ngModel)]="filters.search" (input)="onFilterChange()" placeholder="Search jobs or company name" />
+    <input [(ngModel)]="filters.location" (input)="onFilterChange()" placeholder="Location" />
+    <select [(ngModel)]="filters.job_type" (change)="onFilterChange()">
+        <option value="">All Types</option>
+        <option *ngFor="let type of jobTypes" [value]="type">{{type}}</option>
+    </select>
+</div>
+
+<div class="job-stats">
+    <span>Jobs Available: {{stats.jobs_available || 0}}</span>
+    <span>Companies Hiring: {{stats.companies_hiring || 0}}</span>
+    <span>Support Available: {{stats.support_available || '24/7'}}</span>
+</div>
+
+<div class="job-list">
+    <div *ngFor="let job of jobs" class="job-card">
+        <h3>{{job.job_title}}</h3>
+        <div>Type: {{job.work_type}}</div>
+        <div>Company: {{job.employer?.company_name}}</div>
+        <div>Location: {{job.location}}</div>
+        <div>Salary: {{job.salary_range}}</div>
+        <div>Date Posted: {{job.job_posting_date}}</div>
+        <div>Description: {{job.job_description | slice:0:120}}...</div>
+        <div class="tags">{{job.skills}}</div>
+        <button (click)="viewDetails(job)">View Details & Apply</button>
+    </div>
+</div>

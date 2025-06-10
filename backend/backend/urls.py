@@ -24,9 +24,7 @@ from api import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-
     path('api/resume/', views.ResumeUpload.as_view(), name='resume-upload'),
     path('api/applicant/<int:applicant_id>/resume/', views.ResumeAnalysisByApplicant.as_view(), name='resume-analysis-by-applicant'),
-
-
+    path('api/', include('api.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
