@@ -5,6 +5,8 @@ from pdfminer.high_level import extract_text
 from PyPDF2 import PdfReader
 from nltk.tokenize import sent_tokenize
 
+
+
 # List of predefined skills
 skills_list = [
     # Communication & Interpersonal
@@ -108,6 +110,7 @@ skills_list = [
     'Multi-Factor Authentication (MFA)', 'Blockchain', 'Cryptocurrency', 'Decentralized Finance (DeFi)', 'Smart Contracts', 'Web3', 'Non-Fungible Tokens (NFTs)'
 ]
 
+#---------------EDUCATION--------------------------------------------------
 education_keywords = [
     # Computer & Technology Fields
     'Computer Science', 'Computer Engineering', 'Software Engineering', 'Information Technology',
@@ -178,11 +181,13 @@ education_keywords = [
     'Diploma', 'Certificate', 'Associate Degree', 'Professional Certification'
 ]
 
-# Load spaCy model
-nlp = spacy.load("en_core_web_sm")
 
-class InformationExtraction:
-    
+
+class ResumeInformationExtraction:
+    # Load spaCy model
+    nlp = spacy.load("en_core_web_sm")
+
+    # A. PDF TO TEXT EXTRACTOR 
     def extract_text_from_pdf(self, pdf_path):
         """Extract text from PDF file"""
         try:
@@ -190,12 +195,26 @@ class InformationExtraction:
         except Exception as e:
             print(f"Error extracting text from PDF: {e}")
             return ""
+        
+    # 1. EXTRACT NAME
+    def extract_name(self, text):
+        """Extract name using Spacy"""
+        try:
+            doc = self.nlp(text)
+            for ent in doc.ents:
+                if ent.label_ == "PERSON":
+                    return ent.text
+        except Exception as e:
+            print(f"Error extracting name: {e}")
+        return ""
     
+    # 2. EXTRACT EMAIL
     def extract_email(self, text):
         """Extract email address from text"""
         match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', text)
         return match.group(0) if match else None
-
+    
+    # 3. EXTRACT MOBILE NUMBER
     def extract_mobile(self, text):
         """Extract mobile number from text"""
         # More comprehensive phone number pattern
@@ -210,18 +229,8 @@ class InformationExtraction:
             if match:
                 return match.group(0)
         return None
-
-    def extract_name(self, text):
-        """Extract name using NLP"""
-        try:
-            doc = nlp(text)
-            for ent in doc.ents:
-                if ent.label_ == "PERSON":
-                    return ent.text
-        except Exception as e:
-            print(f"Error extracting name: {e}")
-        return ""
     
+    # 4. EXTRACT SKILLS
     def extract_skills(self, text):
         """Extract skills from text"""
         text_lower = text.lower()
@@ -233,16 +242,115 @@ class InformationExtraction:
         
         # Remove duplicates while preserving order
         return list(dict.fromkeys(found_skills))
-
+    
+    # 5. EXTRACT YEARS OF EXPERIENCE (Enhanced)
     def extract_experience(self, text):
-        y_match = re.search(r'(\d+)\s+year', text.lower())
-        m_match = re.search(r'(\d+)\s+month', text.lower())
-        years = int(y_match.group(1)) if y_match else 0
-        months = int(m_match.group(1)) if m_match else 0
-        total = round(years + months / 12, 2)
-        return total
+        """Extract years of experience with multiple pattern matching"""
+        experience_patterns = [
+            # Pattern: "X years of experience"
+            r'(\d+(?:\.\d+)?)\s+years?\s+of\s+experience',
+            # Pattern: "X years experience"
+            r'(\d+(?:\.\d+)?)\s+years?\s+experience',
+            # Pattern: "Experience: X years"
+            r'experience[:\s]+(\d+(?:\.\d+)?)\s+years?',
+            # Pattern: "X+ years" or "X-Y years"
+            r'(\d+(?:\.\d+)?)\+?\s+years?',
+            # Pattern: "X year" (singular)
+            r'(\d+(?:\.\d+)?)\s+year\b',
+            # Pattern: "X months"
+            r'(\d+(?:\.\d+)?)\s+months?'
+        ]
+        
+        text_lower = text.lower()
+        total_years = 0
+        
+        # Try each pattern
+        for pattern in experience_patterns:
+            matches = re.findall(pattern, text_lower)
+            if matches:
+                for match in matches:
+                    years = float(match)
+                    # If pattern contains "months", convert to years
+                    if 'month' in pattern:
+                        years = years / 12
+                    total_years = max(total_years, years)  # Take the highest value found
+        
+        # Additional pattern for "X years Y months"
+        combined_pattern = r'(\d+)\s+years?\s+(?:and\s+)?(\d+)\s+months?'
+        combined_match = re.search(combined_pattern, text_lower)
+        if combined_match:
+            years = int(combined_match.group(1))
+            months = int(combined_match.group(2))
+            combined_total = years + (months / 12)
+            total_years = max(total_years, combined_total)
+        
+        return round(total_years, 2)
+    
 
-    def extract_college(self, text):
+    # 6. DETERMINE EXPERIENCE LEVEL BASED ON YEARS OF EXPERIENCE
+    def determine_experience_level(self, years_of_experience):
+        """
+        Determine experience level based on years of experience
+        """
+        if years_of_experience == 0:
+            return {
+                'level': 'Fresher',
+                'description': 'No professional experience',
+                'code': 0,
+                'range': '0 years'
+            }
+        elif 0 < years_of_experience <= 1:
+            return {
+                'level': 'Entry Level',
+                'description': 'New to the workforce with minimal experience',
+                'code': 1,
+                'range': '0-1 years'
+            }
+        elif 1 < years_of_experience <= 3:
+            return {
+                'level': 'Junior',
+                'description': 'Early career professional with some experience',
+                'code': 2,
+                'range': '1-3 years'
+            }
+        elif 3 < years_of_experience <= 5:
+            return {
+                'level': 'Mid-Level',
+                'description': 'Experienced professional with solid skills',
+                'code': 3,
+                'range': '3-5 years'
+            }
+        elif 5 < years_of_experience <= 8:
+            return {
+                'level': 'Senior',
+                'description': 'Highly experienced with leadership capabilities',
+                'code': 4,
+                'range': '5-8 years'
+            }
+        elif 8 < years_of_experience <= 12:
+            return {
+                'level': 'Lead/Principal',
+                'description': 'Expert level with team leadership experience',
+                'code': 5,
+                'range': '8-12 years'
+            }
+        elif 12 < years_of_experience <= 20:
+            return {
+                'level': 'Director/Manager',
+                'description': 'Senior management with extensive experience',
+                'code': 6,
+                'range': '12-20 years'
+            }
+        else:  # > 20 years
+            return {
+                'level': 'Executive/C-Level',
+                'description': 'Executive level with decades of experience',
+                'code': 7,
+                'range': '20+ years'
+            }
+    
+    # 6. EXTRACT COLLEGE OR EXPERIENCE WITH INSTITUTIONS
+    def extract_educational_institutions(self, text):
         """Extract college/university names"""
         lines = text.split('\n')
         colleges = []
@@ -255,8 +363,9 @@ class InformationExtraction:
                 colleges.append(line)
         
         return colleges
-
-    def extract_degree(self, text):
+    
+    # 7. EXTRACT DEGREE OR EDUCATIONAL ATTAINMENT
+    def extract_educational_attainment(self, text):
         """Extract degree information"""
         text_lower = text.lower()
         found_degrees = []
@@ -267,7 +376,8 @@ class InformationExtraction:
         
         # Remove duplicates while preserving order
         return list(dict.fromkeys(found_degrees))
-
+    
+    # 8. EXTRACT NUMBER OF PAGES IN RESUME 
     def get_pdf_page_count(self, filepath):
         """Get number of pages in PDF"""
         try:
@@ -276,28 +386,35 @@ class InformationExtraction:
         except Exception as e:
             print(f"Error counting PDF pages: {e}")
             return 0
-
+    
+    #---------------------MAIN METHOD--------------------------------
     def parse_resume(self, pdf_path):
         """Main function to parse resume and extract all information"""
         if not os.path.exists(pdf_path):
             print(f"File not found: {pdf_path}")
             return None
-        
         try:
             text = self.extract_text_from_pdf(pdf_path)
-            
             if not text:
                 print("No text extracted from PDF")
                 return None
+            
+            # Extract experience years
+            total_experience = self.extract_experience(text)
+            # Determine experience level
+            experience_level_info = self.determine_experience_level(total_experience)
             
             return {
                 'name': self.extract_name(text),
                 'email': self.extract_email(text),
                 'mobile_number': self.extract_mobile(text),
                 'skills': self.extract_skills(text),
-                'total_experience': self.extract_experience(text),
-                'educational_institutions': self.extract_college(text),
-                'degree': self.extract_degree(text),
+                'total_experience': total_experience,
+                'experience_level': experience_level_info['level'],
+                'experience_description': experience_level_info['description'],
+                'experience_range': experience_level_info['range'],
+                'educational_institutions': self.extract_educational_institutions(text),
+                'educational_attainment': self.extract_educational_attainment(text),
                 'no_of_pages': self.get_pdf_page_count(pdf_path)
             }
             
@@ -305,24 +422,31 @@ class InformationExtraction:
             print(f"Error parsing resume: {e}")
             return None
 
-
-# Example usage
-if __name__ == "__main__":
-    # Update this path to your actual PDF file
-    pdf_abs_path = r'C:\Users\rochefym\Documents\Finals_NLPforJobApp\I_resume_parser_files\Uploaded_Resumes\data-scientist-1559725114.pdf'
+# # Example usage
+# if __name__ == "__main__":
+#     # Update this path to your actual PDF file
+#     pdf_abs_path = r'C:\Users\rochefym\Documents\Finals_NLPforJobApp\backend\media\pdfs\Bright_Kyeremeh_Data_Scientist.pdf'
     
-    # Process the resume
-    if os.path.exists(pdf_abs_path):
-        extractor = InformationExtraction()
-        output = extractor.parse_resume(pdf_abs_path)
-        print(output.get('name'))
-
-        if output:
-            print("Resume parsing successful!")
-            for key, value in output.items():
-                print(f"{ky}: {value}")
-        else:
-            print("Failed to parse resume")
-    else:
-        print("File not found. Please verify the path:")
-        print(pdf_abs_path)
+#     # Process the resume
+#     if os.path.exists(pdf_abs_path):
+#         extractor = ResumeInformationExtraction()
+#         output = extractor.parse_resume(pdf_abs_path)
+        
+#         if output:
+#             print("Resume parsing successful!")
+#             print("="*10)
+#             for key, value in output.items():
+#                 print(f"{key}: {value}")
+            
+#             # Display experience level summary
+#             print("\n" + "="*10)
+#             print("EXPERIENCE LEVEL SUMMARY:")
+#             print(f"Years of Experience: {output['total_experience']}")
+#             print(f"Experience Level: {output['experience_level']}")
+#             print(f"Description: {output['experience_description']}")
+#             print(f"Range: {output['experience_range']}")
+#         else:
+#             print("Failed to parse resume")
+#     else:
+#         print("File not found. Please verify the path:")
+#         print(pdf_abs_path)

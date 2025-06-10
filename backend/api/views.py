@@ -11,6 +11,13 @@ from datetime import datetime
 from api.models import Applicant, Resume, Analysis
 from api.serializers import ApplicantSerializer, ResumeSerializer, AnalysisSerializer
 
+# RESUME INFORMATION EXTRACTOR
+from .Resume_Analysis.resume_info_extraction import ResumeInformationExtraction
+
+#RESUME JOB CATEGORY PREDICTIONS AND RECOMMENDATIONS
+from .Resume_Analysis.resume_classifier import ResumeClassifier
+
+#RESUME ANALYSIS
 from .Resume_Analysis.resume_analysis import ResumeAnalysis
 
 
@@ -22,12 +29,10 @@ class ApplicantList(APIView):
         return Response(serializer.data)
 
 
-
 class ResumeUpload(APIView):
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request, format=None):
-
         #1. Extract data
         applicant_id = request.data.get('applicant')
         name = request.data.get('name')
@@ -39,39 +44,45 @@ class ResumeUpload(APIView):
         except Applicant.DoesNotExist:
             return Response({"error": "Applicant not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # 3. If applicant exists/validated, create resume analysis using ResumeAnalysis Class
-        # === Custom Analysis Logic ===
-        # Dummy analysis logic: You can replace this with real resume parsing & scoring logic
-        resume_score = 85  # e.g., parsed from content
-        page_no = 2  # Simulated number of pages
-        predicted_field = "Software Engineering"
-        reco_field = "Data Science"
-        skills = ["Python", "Django"]
-        recommended_skills = ["Machine Learning", "REST APIs"]
-
-        
-        resume_analyzer = ResumeAnalysis()
-        resume_analysis = resume_analyzer.get_resume_analysis(pdf_file)
-
-
-        # 4. Create Analysis object
-        analysis = Analysis.objects.create(
-            resume_score=resume_score,
-            page_no=page_no,
-            predicted_field=predicted_field,
-            reco_field=reco_field,
-            skills=skills,
-            recommended_skills=recommended_skills,
-        )
-
-        # 5. Create Resume object
+       
+        # 3. Create Resume object without analysis
         resume = Resume.objects.create(
             applicant=applicant,
-            analysis=analysis,
             name=name,
             pdf_file=pdf_file,
         )
 
+        # 4. Resume Information Extractioh and Resume Classifier
+        resume_info_extractor = ResumeInformationExtraction()
+        resume_classifier = ResumeClassifier()
+        resume_path = resume.pdf_file.path
+
+        extracted_from_resume = resume_info_extractor.parse_resume(resume_path)
+        top3_predicted_job_categories, top3_job_recommendations = resume_classifier.get_top3_job_prediction_and_recommendation(resume_path)
+
+
+        # 5. Create Analysis object
+        analysis = Analysis.objects.create(
+            name = extracted_from_resume['name'] ,
+            email = extracted_from_resume['email'],
+            mobile_number = extracted_from_resume['mobile_number'],
+            years_of_experience = extracted_from_resume['total_experience'],
+            experience_level = extracted_from_resume['experience_level'],
+            experience_description = extracted_from_resume['experience_description'],
+            experience_range = extracted_from_resume['experience_range'],
+            skills = extracted_from_resume['skills'],
+            educational_institutions = extracted_from_resume['educational_institutions'],
+            educational_attainment = extracted_from_resume['educational_attainment'],
+            no_of_pages = extracted_from_resume['no_of_pages'],
+            predicted_job_categories = top3_predicted_job_categories,
+            recommended_jobs = top3_job_recommendations,
+        )
+
+        # 6. Update resume with the newly created analysis
+        resume.analysis = analysis
+        resume.save()
+
+        # 7. Serialize and return
         resume_serializer = ResumeSerializer(resume)
         return Response(resume_serializer.data, status=status.HTTP_201_CREATED)
 
@@ -81,8 +92,12 @@ class ResumeAnalysisByApplicant(APIView):
         try:
             applicant = Applicant.objects.get(id=applicant_id)
             latest_resume = applicant.resumes.latest('uploaded_at')
-            serializer = ResumeSerializer(latest_resume)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            resume_pdf = latest_resume.pdf_file.path
+
+            resume_analyzer = ResumeAnalysis()
+            analysis = resume_analyzer.analyze_resume(resume_pdf)
+
+            return Response(analysis, status=status.HTTP_200_OK)
         except Applicant.DoesNotExist:
             return Response({"error": "Applicant not found."}, status=status.HTTP_404_NOT_FOUND)
         except Resume.DoesNotExist:
