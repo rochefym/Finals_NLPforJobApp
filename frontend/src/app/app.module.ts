@@ -3,10 +3,7 @@ import { BrowserModule } from '@angular/platform-browser';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { HomeComponent } from './applicant-pages/home/home.component';
-import { ResumeComponent } from './applicant-pages/resume/resume.component';
 import { JobMatcherComponent } from './applicant-pages/job-matcher/job-matcher.component';
-import { HeaderComponent } from './components/header/header.component';
 import { HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 // Angular Material Modules
@@ -16,16 +13,15 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCardModule } from '@angular/material/card';
 import { ProfileComponent } from './applicant-pages/profile/profile.component';
+import { JobsPageComponent } from './jobs-page/jobs-page.component';
+import { JobDetailComponent } from './jobs-page/job-detail.component';
+import { HomeComponent } from './applicant-pages/home/home.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    HomeComponent,
-    ResumeComponent,
     JobMatcherComponent,
-    HeaderComponent,
     ProfileComponent,
-    
   ],
   imports: [
     BrowserModule,
@@ -36,7 +32,10 @@ import { ProfileComponent } from './applicant-pages/profile/profile.component';
     MatTabsModule,
     MatCardModule,
     HttpClientModule,
-    FormsModule
+    FormsModule,
+    JobsPageComponent,
+    JobDetailComponent,
+    HomeComponent
   ],
   providers: [],
   bootstrap: [AppComponent]

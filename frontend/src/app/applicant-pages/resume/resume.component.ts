@@ -1,7 +1,9 @@
 import { Component } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpClientModule } from '@angular/common/http'; // Added HttpClientModule
 import { marked } from 'marked';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { CommonModule } from '@angular/common'; // Added CommonModule
+import { FormsModule } from '@angular/forms'; // Added FormsModule
 
 interface JobPrediction {
   0: string;
@@ -27,7 +29,8 @@ interface AnalysisData {
 
 @Component({
   selector: 'app-resume',
-  standalone: false,
+  standalone: true, // Added standalone: true
+  imports: [CommonModule, FormsModule, HttpClientModule], // Added imports
   templateUrl: './resume.component.html',
   styleUrl: './resume.component.css'
 })
@@ -56,7 +59,7 @@ export class ResumeComponent {
 
   onFileSelected(event: any) {
     this.selectedFile = event.target.files[0];
-    this.fileName = this.selectedFile.name.split('.')[0]; 
+    this.fileName = this.selectedFile.name.split('.')[0];
   }
 
   upload() {
@@ -87,15 +90,15 @@ export class ResumeComponent {
       const res = await this.http.get(`http://localhost:8000/api/applicant/${this.applicantId}/resume/`).toPromise();
       console.log('Success. Analysis of RESUME: ', res);
       this.result_2 = res;
-      
-      const contentToParse = typeof this.result_2 === 'string' 
-        ? this.result_2 
+
+      const contentToParse = typeof this.result_2 === 'string'
+        ? this.result_2
         : JSON.stringify(this.result_2);
-      
+
       // Await the marked.parse() call
       const parsedMarkdown = await marked.parse(contentToParse);
       this.marked_up_result_2 = this.sanitizer.bypassSecurityTrustHtml(parsedMarkdown);
-      
+
     } catch (err) {
       console.error('Analysis fetch failed', err);
     } finally {

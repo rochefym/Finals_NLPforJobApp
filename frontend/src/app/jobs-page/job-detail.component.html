@@ -1,0 +1,23 @@
+<div *ngIf="job" class="job-detail-container">
+    <h2>{{job.job_title}}</h2>
+    <div>Location: {{job.location}}</div>
+    <div>Salary: {{job.salary_range}}</div>
+    <div>Job Type: {{job.work_type}}</div>
+    <div>Date Posted: {{job.job_posting_date}}</div>
+    <div class="job-description"><strong>Description:</strong> {{job.job_description}}</div>
+    <div class="requirements"><strong>Requirements:</strong> {{job.qualifications}}</div>
+    <div class="skills"><strong>Technical Skills:</strong> {{job.skills}}</div>
+    <div class="experience"><strong>Experience:</strong> {{job.experience}}</div>
+    <button (click)="applyNow()">Apply Now</button>
+    <div class="about-company">
+        <h3>About Company</h3>
+        <div>{{job.employer?.company_profile}}</div>
+    </div>
+    <div class="similar-jobs">
+        <h3>Similar Jobs</h3>
+        <div *ngFor="let sjob of similarJobs">
+            <div>{{sjob.job_title}} at {{sjob.employer?.company_name}}</div>
+            <div>{{sjob.location}} | {{sjob.work_type}}</div>
+        </div>
+    </div>
+</div>

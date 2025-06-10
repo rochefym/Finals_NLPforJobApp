@@ -30,7 +30,8 @@
           <strong>Phone:</strong> {{ analysisData.mobile_number }}
         </div>
         <div>
-          <strong>Experience:</strong> {{ analysisData.years_of_experience }} years ({{ analysisData.experience_level }})
+          <strong>Experience:</strong> {{ analysisData.years_of_experience }} years ({{ analysisData.experience_level
+          }})
         </div>
       </div>
     </div>
@@ -55,7 +56,7 @@
             {{ degree }}
           </li>
         </ul>
-        
+
         <h4>Institutions:</h4>
         <ul>
           <li *ngFor="let institution of analysisData.educational_institutions | slice:0:5">
