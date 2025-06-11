@@ -1,14 +1,16 @@
 import os
 from dotenv import load_dotenv
-from groq import Groq
+# from groq import Groq
+from openai import OpenAI
 from pdfminer.high_level import extract_text
 
 
 load_dotenv()
 
 class ResumeAnalysis:
-    # Grok 
-    client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+    # Grok: client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+    #OpenAI
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
     # Function to extract text from PDF
     def extract_text_from_pdf(self, pdf_path):
@@ -18,7 +20,6 @@ class ResumeAnalysis:
         except Exception as e:
             print(f"Error extracting text from PDF: {e}")
             return ""
-
 
 
     # Function to get response from Groq AI
@@ -47,12 +48,11 @@ class ResumeAnalysis:
         
         try:
             completion = self.client.chat.completions.create(
-                model="compound-beta", 
+                model="gpt-3.5-turbo",  # Changed model to OpenAI's
                 messages=[{"role": "user", "content": base_prompt}],
                 temperature=0.7,
                 max_tokens=1024,
-                top_p=1,
-                stream=False
+                top_p=1
             )
             
             analysis = completion.choices[0].message.content

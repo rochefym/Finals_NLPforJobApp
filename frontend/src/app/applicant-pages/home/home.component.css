@@ -1,69 +1,76 @@
-/* resume-analysis.component.scss */
 .welcome-header {
-    h1 {
-      font-weight: 600;
-      color: #2c3e50;
-    }
-    
-    p {
-      color: #7f8c8d;
-    }
+  h1 {
+    font-weight: 600;
+    color: #2c3e50;
   }
   
-  .nav-tabs {
-    border-bottom: 2px solid #dee2e6;
-    
-    .nav-link {
-      color: #7f8c8d;
-      border: none;
-      padding: 0.75rem 1.25rem;
-      
-      &:hover {
-        border: none;
-        color: #2c3e50;
-      }
-      
-      &.active {
-        color: #3498db;
-        font-weight: 600;
-        border-bottom: 3px solid #3498db;
-        background-color: transparent;
-      }
-    }
-  }
-  
-  .card {
-    border: none;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    
-    .card-title {
-      font-weight: 600;
-      color: #2c3e50;
-    }
-    
-    .card-text {
-      color: #7f8c8d;
-    }
-  }
-  
-  .dashed-upload-box {
-    border: 2px dashed #bdc3c7;
-    border-radius: 8px;
-    background-color: #f8f9fa;
+  p {
     color: #7f8c8d;
+  }
+}
+
+.nav-tabs {
+  border-bottom: 2px solid #dee2e6;
+  
+  .nav-link {
+    color: #7f8c8d;
+    border: none;
+    padding: 0.75rem 1.25rem;
+    cursor: pointer;
     transition: all 0.3s ease;
     
     &:hover {
-      border-color: #3498db;
-      background-color: #f0f8ff;
+      border: none;
+      color: #2c3e50;
+      background-color: rgba(52, 152, 219, 0.1);
+    }
+    
+    &.active {
+      color: #3498db;
+      font-weight: 600;
+      border-bottom: 3px solid #3498db;
+      background-color: transparent;
     }
   }
+}
+
+.width-viewing {
+  width: 800px;
+}
+
+/* Your existing card and button styles remain the same */
+.card {
+  border: none;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
   
-  .btn-primary {
-    background-color: #3498db;
-    border-color: #3498db;
-    padding: 0.5rem 1.5rem;
-    border-radius: 20px;
-    font-weight: 500;
+  .card-title {
+    font-weight: 600;
+    color: #2c3e50;
   }
+  
+  .card-text {
+    color: #7f8c8d;
+  }
+}
+
+.dashed-upload-box {
+  border: 2px dashed #bdc3c7;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  color: #7f8c8d;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    border-color: #3498db;
+    background-color: #f0f8ff;
+  }
+}
+
+.btn-primary {
+  background-color: #3498db;
+  border-color: #3498db;
+  padding: 0.5rem 1.5rem;
+  border-radius: 20px;
+  font-weight: 500;
+}

@@ -8,6 +8,9 @@ import { HttpClient } from '@angular/common/http';
   styleUrl: './home.component.css',
 })
 export class HomeComponent {
-  
-  
+  activeTab: string = 'resume'; // Set default tab
+
+  setActiveTab(tabName: string): void {
+    this.activeTab = tabName;
+  }
 }

@@ -248,6 +248,7 @@ li {
 @media (max-width: 768px) {
   .resume-container {
     padding: 15px;
+    margin: 0rem  20rem;
   }
   
   .upload-section {
