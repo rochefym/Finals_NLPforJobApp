@@ -1,13 +1,24 @@
-1.  RESUME PARSING
-- nltk
-- spacy
-- pyresparser ( a Python library used to parse and extract information from resumes (CVs). It helps convert unstructured text in resumes (PDF, DOCX, etc.) into structured data like name, email, education, skills, experience, etc.)
-- pdfminer3
-- streamlit (for building web applications)
-- pandas (for data manipulation and analysis)
-- streamlit-tags (for adding tags in Streamlit applications)
-- Pillow (for image processing)
-- plotly (for data visualization)
+# 1.  RESUME PARSING
+# - nltk
+# - spacy
+# - pyresparser ( a Python library used to parse and extract information from resumes (CVs). It helps convert unstructured text in resumes (PDF, DOCX, etc.) into structured data like name, email, education, skills, experience, etc.)
+# - pdfminer3
+# - streamlit (for building web applications)
+# - pandas (for data manipulation and analysis)
+# - streamlit-tags (for adding tags in Streamlit applications)
+# - Pillow (for image processing)
+# - plotly (for data visualization)
+
+# convert requirements to pip install list
+nltk
+spacy
+# pyresparser
+pdfminer3
+streamlit
+pandas
+streamlit-tags
+Pillow
+plotly
 
 
 

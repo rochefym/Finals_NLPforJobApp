@@ -43,5 +43,33 @@ class Resume(models.Model):
 
 
 
+#### maria's code ####
+
+class Job(models.Model):
+    employer = models.ForeignKey('Employer', on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    requirements = models.TextField()
+    skills = models.JSONField(default=list)  # Store as ['Python', 'Django', ...]
+    salary_range = models.CharField(max_length=100)
+    location = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True)
+    posted_at = models.DateTimeField(auto_now_add=True)
+
+class Employer(models.Model):
+    name = models.CharField(max_length=100)
+    email = models.EmailField(unique=True)
+    password = models.CharField(max_length=128)
+    company_name = models.CharField(max_length=255)
+    company_profile = models.TextField()
+
+class ApplicantJob(models.Model):
+    applicant = models.ForeignKey(Applicant, on_delete=models.CASCADE)
+    job = models.ForeignKey(Job, on_delete=models.CASCADE)
+    similarity_score = models.FloatField()  # 0.0 to 1.0
+    is_applied = models.BooleanField(default=False)
+    last_updated = models.DateTimeField(auto_now=True)
+
+
 
 
