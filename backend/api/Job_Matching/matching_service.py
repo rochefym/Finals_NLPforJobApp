@@ -8,6 +8,10 @@ class MatchingService:
         Match one applicant to all active jobs
         """
         applicant = Applicant.objects.get(id=applicant_id)
+        
+        if not applicant.resumes.exists():
+            return # No resumes to match
+
         latest_resume = applicant.resumes.latest('uploaded_at')
         applicant_skills = latest_resume.analysis.skills
         
@@ -32,7 +36,9 @@ class MatchingService:
         """
         job = Job.objects.get(id=job_id)
         
-        for applicant in Applicant.objects.all():
+        applicants_with_resumes = Applicant.objects.filter(resumes__isnull=False).distinct()
+
+        for applicant in applicants_with_resumes:
             latest_resume = applicant.resumes.latest('uploaded_at')
             score = SimilarityEngine.calculate_similarity(
                 job.requirements,
