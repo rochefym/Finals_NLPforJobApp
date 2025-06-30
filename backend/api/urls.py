@@ -6,7 +6,8 @@ from api.views import (
     ApplyToJobView,
     ApplicantRegistrationView,  
     EmployerRegistrationView,
-    LoginView  # Import LoginView
+    LoginView,  # Import LoginView
+    ApplicantLatestResumeView # Import the new view
 )
 
 urlpatterns = [
@@ -17,4 +18,5 @@ urlpatterns = [
     path('register/applicant/', ApplicantRegistrationView.as_view(), name='register-applicant'), 
     path('register/employer/', EmployerRegistrationView.as_view(), name='register-employer'), 
     path('login/', LoginView.as_view(), name='login'), # Add login path
+    path('applicant/latest-resume/', ApplicantLatestResumeView.as_view(), name='applicant-latest-resume'), # Add new path
 ]

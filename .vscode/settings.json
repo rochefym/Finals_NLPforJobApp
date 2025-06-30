@@ -1,0 +1,14 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "aiwork_local",
+            "database": "aiwork",
+            "username": "postgres",
+            "password": "postgres"
+        }
+    ]
+}

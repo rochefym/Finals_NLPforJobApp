@@ -17,6 +17,14 @@
             </div>
         </div>
         <div>
+            <label for="phone_number">Phone Number:</label>
+            <input type="tel" id="phone_number" name="phone_number" [(ngModel)]="phone_number" required
+                #phoneInput="ngModel">
+            <div *ngIf="phoneInput.invalid && (phoneInput.dirty || phoneInput.touched)">
+                <small *ngIf="phoneInput.errors?.['required']">Phone number is required.</small>
+            </div>
+        </div>
+        <div>
             <label for="password">Password:</label>
             <input type="password" id="password" name="password" [(ngModel)]="password" required minlength="6"
                 #passwordInput="ngModel">

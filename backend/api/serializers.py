@@ -11,11 +11,14 @@ class ApplicantSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        # Hash password before saving
+        # Password should ideally be hashed before it reaches here (e.g., in the view)
+        # or if it's handled here, it should be done carefully.
+        # Assuming password in validated_data is the one to be set.
         password = validated_data.pop('password', None)
         instance = self.Meta.model(**validated_data)
         if password is not None:
-            instance.set_password(password) # Django's built-in way to hash
+            # instance.set_password(password) # This was causing the error
+            instance.password = password # Assign the password directly (should be hashed by the view)
         instance.save()
         return instance
 
@@ -47,7 +50,8 @@ class EmployerSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password', None)
         instance = self.Meta.model(**validated_data)
         if password is not None:
-            instance.set_password(password) # Django's built-in way to hash
+            # instance.set_password(password) # This was causing the error
+            instance.password = password # Assign the password directly (should be hashed by the view)
         instance.save()
         return instance
 

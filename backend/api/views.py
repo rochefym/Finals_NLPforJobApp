@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.generics import ListAPIView, RetrieveAPIView, CreateAPIView
+from rest_framework.permissions import IsAuthenticated # Import IsAuthenticated
 
 from django.db.models import Q
 from datetime import datetime
@@ -150,38 +151,132 @@ class JobStatsView(APIView):
 # --- Apply to Job (with Resume Upload) ---
 class ApplyToJobView(APIView):
     parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [IsAuthenticated] # Require authentication
+
     def post(self, request, job_id):
-        # Required fields
-        name = request.data.get('name')
-        email = request.data.get('email')
+        print(f"ApplyToJobView: Request user: {request.user}")
+        print(f"ApplyToJobView: Request user ID: {getattr(request.user, 'id', 'N/A')}")
+        print(f"ApplyToJobView: Is authenticated: {request.user.is_authenticated}")
+        print(f"ApplyToJobView: Auth token: {request.auth}")
+
+        # Get Applicant from the authenticated user
+        # Assuming your JWT token's user_id claim stores the Applicant ID
+        # and that your custom user model is Applicant.
+        # If you are using Django's default User model with SimpleJWT, request.user will be that User instance.
+        # For this example, let's assume the JWT directly identifies an Applicant or Employer.
+        
+        # The user object attached by JWTAuthentication might be the Applicant/Employer directly
+        # if your models are correctly set up with Django's auth system or if SimpleJWT is customized.
+        # However, your Applicant/Employer models are not Django AbstractUser.
+        # Let's assume the token payload contains user_id which is the Applicant.id
+        # We need to ensure that the request.user is actually an Applicant instance.
+        # A more robust way would be to check the user_type from the token if available,
+        # or ensure this endpoint is only for Applicants.
+
+        applicant_user = request.user
+        if not isinstance(applicant_user, Applicant):
+            # If request.user is a standard Django User, you might need to fetch the related Applicant profile.
+            # For now, let's try to get the applicant ID from the token if it's not directly the applicant model.
+            # This part depends heavily on how JWT is configured with your custom models.
+            # A common approach if user_id in token is Applicant.id:
+            try:
+                # Assuming request.user.id is the Applicant ID from the token payload
+                applicant = Applicant.objects.get(id=request.user.id) 
+            except Applicant.DoesNotExist:
+                return Response({'error': 'Applicant profile not found for the authenticated user.'}, status=status.HTTP_403_FORBIDDEN)
+            except AttributeError: # If request.user doesn't have an id (e.g. AnonymousUser)
+                 return Response({'error': 'Invalid user in token.'}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            applicant = applicant_user # If request.user is already an Applicant instance
+
+        # Get data from request
+        name = request.data.get('name', applicant.name) # Default to applicant's current name
+        email = request.data.get('email', applicant.email) # Default to applicant's current email
         phone_number = request.data.get('phone_number')
-        start_date = request.data.get('start_date')
+        start_date_str = request.data.get('start_date')
         resume_file = request.data.get('resume_file')
-        years_of_experience = request.data.get('years_of_experience')
-        expected_salary = request.data.get('expected_salary')
+        years_of_experience_str = request.data.get('years_of_experience')
+        expected_salary_str = request.data.get('expected_salary')
         cover_letter = request.data.get('cover_letter')
-        # Find job
+
+        # Validate required fields that are not pre-filled or part of the model
+        if not all([phone_number, start_date_str, resume_file, years_of_experience_str]):
+            return Response({'error': 'Missing required fields: phone_number, start_date, resume_file, years_of_experience are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             job = Job.objects.get(id=job_id)
         except Job.DoesNotExist:
-            return Response({'error': 'Job not found.'}, status=404)
-        # Create applicant (or get by email)
-        applicant, _ = Applicant.objects.get_or_create(email=email, defaults={
-            'name': name,
-            'phone_number': phone_number,
-            'password': 'default',  # Set a default or random password
-        })
-        # Create resume
-        resume = Resume.objects.create(
+            return Response({'error': 'Job not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Update Applicant details if provided and different
+        if name != applicant.name:
+            applicant.name = name
+        if email != applicant.email: # This could be tricky if email is unique and they try to change to existing one
+            # Consider if email change should be allowed here or via a separate profile update mechanism
+            pass # For now, let's assume email from token is authoritative or not changed here.
+        if phone_number:
+            applicant.phone_number = phone_number
+        applicant.save() # Save any changes to applicant
+
+        # Create Resume
+        if not resume_file:
+            return Response({'error': 'Resume file is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        resume_name = f"Resume for {job.job_title} by {applicant.name}"
+        resume_instance = Resume.objects.create( # Changed variable name to resume_instance
             applicant=applicant,
-            name=name,
+            name=resume_name, 
             pdf_file=resume_file,
         )
-        # Optionally: Run analysis/scoring here
-        # Link applicant to job
-        Applicant_Job.objects.create(applicant=applicant, job=job, is_applied=True)
-        return Response({'success': True, 'message': 'Application submitted successfully.'})
 
+        # --- Start Resume Analysis Integration ---
+        try:
+            resume_info_extractor = ResumeInformationExtraction()
+            resume_classifier = ResumeClassifier()
+            resume_path = resume_instance.pdf_file.path
+
+            extracted_from_resume = resume_info_extractor.parse_resume(resume_path)
+            top3_predicted_job_categories, top3_job_recommendations = resume_classifier.get_top3_job_prediction_and_recommendation(resume_path)
+
+            analysis_instance = Analysis.objects.create(
+                name=extracted_from_resume.get('name'),
+                email=extracted_from_resume.get('email'),
+                mobile_number=extracted_from_resume.get('mobile_number'),
+                years_of_experience=extracted_from_resume.get('total_experience'),
+                experience_level=extracted_from_resume.get('experience_level'),
+                experience_description=extracted_from_resume.get('experience_description'),
+                experience_range=extracted_from_resume.get('experience_range'),
+                skills=extracted_from_resume.get('skills', []),
+                educational_institutions=extracted_from_resume.get('educational_institutions', []),
+                educational_attainment=extracted_from_resume.get('educational_attainment', []),
+                no_of_pages=extracted_from_resume.get('no_of_pages'),
+                predicted_job_categories=top3_predicted_job_categories,
+                recommended_jobs=top3_job_recommendations,
+            )
+            resume_instance.analysis = analysis_instance
+            resume_instance.save()
+        except Exception as e:
+            # Log the error and potentially inform the user, but don't fail the whole application
+            # For now, we'll just print it. In production, use proper logging.
+            print(f"Error during resume analysis for resume {resume_instance.id}: {e}")
+            # The application can still proceed without the analysis if it fails
+            pass
+        # --- End Resume Analysis Integration ---
+
+        # Link Applicant to Job
+        # Check if already applied
+        if Applicant_Job.objects.filter(applicant=applicant, job=job).exists():
+            return Response({'message': 'You have already applied for this job.', 'success': False}, status=status.HTTP_400_BAD_REQUEST)
+
+        Applicant_Job.objects.create(
+            applicant=applicant, 
+            job=job, 
+            is_applied=True,
+            # Optionally, store other application details here if Applicant_Job model is extended
+            # e.g., cover_letter_snapshot=cover_letter, applied_expected_salary=expected_salary_str etc.
+            )
+
+        return Response({'success': True, 'message': 'Application submitted successfully.'}, status=status.HTTP_201_CREATED)
 
 class ApplicantRegistrationView(CreateAPIView):
     queryset = Applicant.objects.all()
@@ -193,7 +288,8 @@ class ApplicantRegistrationView(CreateAPIView):
         if password:
             serializer.save(password=make_password(password))
         else:
-            # Handle cases where password might not be provided, though serializer should enforce it
+            # Handle case where password is not provided if necessary,
+            # or rely on serializer validation
             serializer.save()
 
 class EmployerRegistrationView(CreateAPIView):
@@ -216,33 +312,76 @@ class LoginView(APIView):
             password = serializer.validated_data['password']
 
             # Try to authenticate as Applicant
-            user = Applicant.objects.filter(email=email).first()
-            if user and user.check_password(password):
+            try:
+                user = Applicant.objects.get(email=email)
                 user_type = 'applicant'
-            else:
-                # Try to authenticate as Employer
-                user = Employer.objects.filter(email=email).first()
-                if user and user.check_password(password):
-                    user_type = 'employer'
-                else:
-                    return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+                if not check_password(password, user.password): # Use check_password
+                    user = None
+            except Applicant.DoesNotExist:
+                user = None
 
-            # Generate token (using Simple JWT as an example)
-            # You would need to install djangorestframework-simplejwt and configure it
-            # pip install djangorestframework-simplejwt
-            # In settings.py:
-            # REST_FRAMEWORK = {
-            #     'DEFAULT_AUTHENTICATION_CLASSES': (
-            #         'rest_framework_simplejwt.authentication.JWTAuthentication',
-            #     )
-            # }
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-                'user_id': user.id,
-                'user_type': user_type,
-                'email': user.email,
-                'name': user.name
-            })
+            # If not Applicant, try to authenticate as Employer
+            if not user:
+                try:
+                    user = Employer.objects.get(email=email)
+                    user_type = 'employer'
+                    if not check_password(password, user.password): # Use check_password
+                        user = None
+                except Employer.DoesNotExist:
+                    user = None
+            
+            if user:
+                refresh = RefreshToken.for_user(user) # Generate token for the user instance
+                return Response({
+                    'refresh': str(refresh),
+                    'access': str(refresh.access_token),
+                    'user_id': user.id,
+                    'user_type': user_type,
+                    'email': user.email,
+                    'name': user.name,
+                })
+            return Response({'detail': 'Invalid credentials or user not found.'}, status=status.HTTP_401_UNAUTHORIZED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ApplicantLatestResumeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        applicant_user = request.user
+        applicant = None
+
+        # Determine if the request.user is an Applicant instance or needs to be fetched
+        # This logic assumes your JWT token correctly identifies the user and their ID
+        if isinstance(applicant_user, Applicant):
+            applicant = applicant_user
+        elif hasattr(request.user, 'id'): # Check if it's a user object with an ID
+            try:
+                # Attempt to fetch Applicant by the ID from the token
+                # This assumes the ID in the token corresponds to an Applicant ID
+                applicant = Applicant.objects.get(id=request.user.id)
+            except Applicant.DoesNotExist:
+                # If not found as Applicant, it could be an Employer or other user type
+                # For this endpoint, we only care about Applicants
+                return Response({'error': 'Applicant profile not found for the authenticated user.'}, status=status.HTTP_403_FORBIDDEN)
+            except AttributeError: # Should not happen if hasattr('id') is true
+                 return Response({'error': 'Invalid user in token.'}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            # If request.user is AnonymousUser or something unexpected
+            return Response({'error': 'Authentication credentials were not provided or are invalid.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        if not applicant: # Double check if applicant was resolved
+             return Response({'error': 'Could not identify applicant from token.'}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            latest_resume = Resume.objects.filter(applicant=applicant).latest('uploaded_at')
+            
+            # The ResumeSerializer is already configured to include 'analysis'
+            # If latest_resume.analysis is None, it will be represented as null in JSON
+            serializer = ResumeSerializer(latest_resume)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Resume.DoesNotExist:
+            return Response({'message': 'No resumes found for this applicant.'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            print(f"Error fetching latest resume/analysis: {e}") # Basic logging
+            return Response({'error': 'An error occurred while fetching resume data.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

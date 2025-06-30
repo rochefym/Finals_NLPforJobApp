@@ -3,21 +3,93 @@
     <div>Location: {{job.location}}</div>
     <div>Salary: {{job.salary_range}}</div>
     <div>Job Type: {{job.work_type}}</div>
-    <div>Date Posted: {{job.job_posting_date}}</div>
-    <div class="job-description"><strong>Description:</strong> {{job.job_description}}</div>
-    <div class="requirements"><strong>Requirements:</strong> {{job.qualifications}}</div>
+    <div>Date Posted: {{job.job_posting_date | date}}</div> <!-- Added date pipe -->
+    <div class="job-description"><strong>Description:</strong>
+        <pre>{{job.job_description}}</pre>
+    </div> <!-- Used <pre> for formatting -->
+    <div class="requirements"><strong>Requirements:</strong>
+        <pre>{{job.qualifications}}</pre>
+    </div> <!-- Used <pre> for formatting -->
     <div class="skills"><strong>Technical Skills:</strong> {{job.skills}}</div>
     <div class="experience"><strong>Experience:</strong> {{job.experience}}</div>
-    <button (click)="applyNow()">Apply Now</button>
+    <button (click)="applyNow()" class="apply-now-button">Apply Now</button>
+
     <div class="about-company">
         <h3>About Company</h3>
         <div>{{job.employer?.company_profile}}</div>
     </div>
     <div class="similar-jobs">
         <h3>Similar Jobs</h3>
-        <div *ngFor="let sjob of similarJobs">
-            <div>{{sjob.job_title}} at {{sjob.employer?.company_name}}</div>
+        <div *ngFor="let sjob of similarJobs" class="similar-job-item">
+            <h4>{{sjob.job_title}} at {{sjob.employer?.company_name}}</h4>
             <div>{{sjob.location}} | {{sjob.work_type}}</div>
+            <!-- Add a link to the similar job's detail page -->
+            <a [routerLink]="['/jobs/', sjob.id]">View Details</a>
         </div>
+        <div *ngIf="similarJobs.length === 0">
+            <p>No similar jobs found based on current criteria.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Application Modal -->
+<div *ngIf="showApplicationModal" class="modal-overlay">
+    <div class="modal-content">
+        <h3>Apply for {{job?.job_title}}</h3>
+        <form (ngSubmit)="submitApplication()" #applicationFormRef="ngForm">
+            <div class="form-group">
+                <label for="name">Full Name:</label>
+                <input type="text" id="name" name="name" [(ngModel)]="applicationForm.name" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" [(ngModel)]="applicationForm.email" required>
+            </div>
+            <div class="form-group">
+                <label for="phone_number">Phone Number:</label>
+                <input type="tel" id="phone_number" name="phone_number" [(ngModel)]="applicationForm.phone_number"
+                    required>
+            </div>
+            <div class="form-group">
+                <label for="start_date">Available Start Date:</label>
+                <input type="date" id="start_date" name="start_date" [(ngModel)]="applicationForm.start_date" required>
+            </div>
+            <div class="form-group">
+                <label for="years_of_experience">Years of Experience:</label>
+                <input type="number" id="years_of_experience" name="years_of_experience"
+                    [(ngModel)]="applicationForm.years_of_experience" required min="0">
+            </div>
+            <div class="form-group">
+                <label for="expected_salary">Expected Salary (Annual):</label>
+                <input type="number" id="expected_salary" name="expected_salary"
+                    [(ngModel)]="applicationForm.expected_salary" min="0">
+            </div>
+            <div class="form-group">
+                <label for="cover_letter">Cover Letter:</label>
+                <textarea id="cover_letter" name="cover_letter" [(ngModel)]="applicationForm.cover_letter"
+                    rows="5"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="resume_file">Resume (PDF only):</label>
+                <input type="file" id="resume_file" name="resume_file" (change)="onFileSelected($event)" accept=".pdf"
+                    required>
+                <div *ngIf="selectedResumeFile" class="file-name">Selected file: {{ selectedResumeFile.name }}</div>
+            </div>
+
+            <div *ngIf="applicationErrorMessage" class="error-message">
+                {{ applicationErrorMessage }}
+            </div>
+            <div *ngIf="applicationSuccessMessage" class="success-message">
+                {{ applicationSuccessMessage }}
+            </div>
+
+            <div class="modal-actions">
+                <button type="submit" [disabled]="applicationSubmitting || !applicationFormRef.form.valid">
+                    {{ applicationSubmitting ? 'Submitting...' : 'Submit Application' }}
+                </button>
+                <button type="button" (click)="closeApplicationModal()"
+                    [disabled]="applicationSubmitting">Cancel</button>
+            </div>
+        </form>
     </div>
 </div>
