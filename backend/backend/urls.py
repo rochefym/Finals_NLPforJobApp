@@ -19,6 +19,8 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
+from api.Job_Matching import urls as job_matching_urls # Import job matching URLs
+
 from api import views
 
 
@@ -27,6 +29,7 @@ urlpatterns = [
 
     path('api/resume/', views.ResumeUpload.as_view(), name='resume-upload'),
     path('api/applicant/<int:applicant_id>/resume/', views.ResumeAnalysisByApplicant.as_view(), name='resume-analysis-by-applicant'),
+    path('api/matching/', include(job_matching_urls)), # Include job matching URLs
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
